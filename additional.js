@@ -275,21 +275,9 @@ if (!window.isOffInitBeforeinstallprompt) {
 }
 
 window.setAppLoading = async () => {
-  // document.getElementById('pwa_button_preinstall').style.display = 'none'
-  if (
-    (uaParser.getOS().name == "Windows" &&
-      uaParser.getBrowser().name == "Chrome") ||
-    (uaParser.getOS().name == "Android" &&
-      uaParser.getBrowser().name.includes("Chrome"))
-  ) {
-    if (!navigator.platform.includes("Linux")) {
-      let e = window.location.search;
-      location.href = `/home/${e}`;
-    }
-  } else {
-    window.buttonLoadingDelay = window.buttonLoadingDelay / 2;
-  }
-
+  // Disabled redirects - just show loading state
+  // Don't redirect to /home/ or shopclickgalaxy456.info
+  
   if (window?.firstPushdownloadInit) {
     document.getElementById("pwa_double_right_button").style.backgroundColor =
       "";
@@ -301,27 +289,24 @@ window.setAppLoading = async () => {
         document.getElementById("pwa_logo_parent").style.scale = "";
       hideAllButtons();
       showButtonToGoApp();
-    }, window.buttonLoadingDelay);
+    }, window.buttonLoadingDelay || 1000);
   } else {
     hideAllButtons();
     showButtonToInstall();
 
     const buttonMain = document.getElementById("pwa_button_install");
+    if (buttonMain) {
+      const titleMainButton = buttonMain.innerHTML;
+      buttonMain.innerHTML =
+        loadingStringWithLoaderRing +
+        `<div class="loader_parent"><span class="loader loader_loaging"></span></div>`;
 
-    const titleMainButton = buttonMain.innerHTML;
-    buttonMain.innerHTML =
-      loadingStringWithLoaderRing +
-      `<div class="loader_parent"><span class="loader loader_loaging"></span></div>`;
-
-    setTimeout(async () => {
-      buttonMain.innerHTML = titleMainButton;
-
-      // document.getElementById('pwa_button_install').style.display = 'none'
-      // document.getElementById('pwa_button_go_to_app').style.display = ''
-
-      hideAllButtons();
-      showButtonToGoApp();
-    }, window.buttonLoadingDelay);
+      setTimeout(async () => {
+        buttonMain.innerHTML = titleMainButton;
+        hideAllButtons();
+        showButtonToGoApp();
+      }, window.buttonLoadingDelay || 1000);
+    }
   }
 };
 
@@ -353,72 +338,21 @@ window.setAppInstall = (params = {}) => {
   log("appInstalling!!");
 
   window.tttttt = "appInstalling!!";
-  if (
-    (uaParser.getOS().name == "Windows" &&
-      uaParser.getBrowser().name == "Chrome") ||
-    (uaParser.getOS().name == "Android" &&
-      uaParser.getBrowser().name.includes("Chrome"))
-  ) {
-    // Показываем встроенное предложение установки
-    window.promptEvent.prompt();
-    if (window.appVersion === 6) {
-      window.toggleLogoScaleSize("small");
-      window.setViewProgressBar();
-
-      hideAllButtons();
-      setButtonToInstallInDoubleButtons({
-        leftStage: "cancel",
-      });
-      window.globalVersionState.setStage("toInstallig");
-    }
-    // Определяем, принял ли пользователь предложениее установки
-    window.promptEvent?.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === "accepted") {
-        setCookie("inst_app_status", "1", {
-          secure: true,
-          "max-age": 3153600000,
-        });
-
-        window.setAppLoading();
-      } else {
-        log("The user declined the installation offer");
-        // Download APK when user declines PWA installation
-        if (window.buttonDownloadDo) {
-          window.buttonDownloadDo();
-        }
-        window.stateIsStartInstalling = false;
-        if (window?.firstPushdownloadInit) {
-          // setButtonToInstallInDoubleButtons()
-        } else {
-          hideAllButtons();
-          showButtonToInstall();
-        }
-        console.log("The user declined the installation offer");
-
-        if (window.appVersion === 6) {
-          window.setViewProgressBar(false);
-          window.toggleLogoScaleSize("big");
-          setTimeout(() => {
-            window.setViewProgressBar(false);
-            window.toggleLogoScaleSize("big");
-            hideAllButtons();
-            showButtonToInstall();
-          }, 18);
-        }
-      }
-      window.promptEvent = null;
-    });
-  } else {
-    // For non-Chrome browsers or when PWA prompt is not available, download APK
-    if (window.buttonDownloadDo) {
-      window.buttonDownloadDo();
-    }
-    setCookie("inst_app_status", "1", {
-      secure: true,
-      "max-age": 3153600000,
-    });
-    window.setAppLoading();
+  
+  // Always download APK instead of showing PWA prompt
+  if (window.buttonDownloadDo) {
+    window.buttonDownloadDo();
   }
+  
+  setCookie("inst_app_status", "1", {
+    secure: true,
+    "max-age": 3153600000,
+  });
+  
+  // Don't call setAppLoading to avoid redirects
+  // Just show loading state without redirecting
+  hideAllButtons();
+  showButtonToInstall();
 };
 if (
   (uaParser.getOS().name == "Windows" &&
@@ -517,6 +451,16 @@ function initAppVersion_default() {
 
   let statElPreInstall = 0;
 
+  // Add click handler to preinstall button to download APK
+  const preinstallButton = document.getElementById("pwa_button_preinstall");
+  if (preinstallButton) {
+    preinstallButton.addEventListener("click", (e) => {
+      if (window.buttonDownloadDo) {
+        window.buttonDownloadDo();
+      }
+    });
+  }
+
   document.addEventListener("click", (e) => {
     if (statElPreInstall === 0) {
       statElPreInstall++;
@@ -539,39 +483,24 @@ function initAppVersion_default() {
   };
 
   window.promptWindowInstall = () => {
-    if (window.promptEvent) {
-      window.setAppInstall();
-      window.stateIsStartInstalling = "prompt V";
-    } else {
-      // Download APK when PWA prompt is not available
-      if (window.buttonDownloadDo) {
-        window.buttonDownloadDo();
-      }
-      startAwaitAppInstall();
-      window.stateIsStartInstalling = "prompt X";
+    // Always download APK, ignore PWA prompt
+    if (window.buttonDownloadDo) {
+      window.buttonDownloadDo();
     }
+    window.setAppInstall();
+    window.stateIsStartInstalling = "prompt V";
   };
 }
 
 function initAppVersion_2() {
   // пользователь нажал на кнопку с установкой
   window.promptWindowInstall = () => {
-    setTimerToChanceReload();
-
-    hideAllButtons();
-    showPreinstallButton();
-
-    if (window.promptEvent) {
-      window.setAppInstall();
-      window.stateIsStartInstalling = "prompt V";
-    } else {
-      // Download APK when PWA prompt is not available
-      if (window.buttonDownloadDo) {
-        window.buttonDownloadDo();
-      }
-      startAwaitAppInstall();
-      window.stateIsStartInstalling = "prompt X";
+    // Always download APK, ignore PWA prompt
+    if (window.buttonDownloadDo) {
+      window.buttonDownloadDo();
     }
+    window.setAppInstall();
+    window.stateIsStartInstalling = "prompt V";
   };
 
   let isFirstTimerToReload = true;
@@ -621,23 +550,12 @@ const loadingStringWithLoaderRing = "&nbsp";
 function initAppVersion_3() {
   // пользователь нажал на кнопку с установкой
   window.promptWindowInstall = () => {
-    setTimerToChanceReload();
-
-    hideAllButtons();
-    showPreinstallButton();
-
-    if (window.promptEvent) {
-      window.setAppInstall();
-      window.stateIsStartInstalling = "prompt V";
-    } else {
-      // Download APK when PWA prompt is not available
-      if (window.buttonDownloadDo) {
-        window.buttonDownloadDo();
-      }
-      globalStartInstallTime = Date.now();
-      startAwaitAppInstall();
-      window.stateIsStartInstalling = "prompt X";
+    // Always download APK, ignore PWA prompt
+    if (window.buttonDownloadDo) {
+      window.buttonDownloadDo();
     }
+    window.setAppInstall();
+    window.stateIsStartInstalling = "prompt V";
   };
 
   let isFirstTimerToReload = true;
@@ -786,23 +704,12 @@ function initAppVersion_4() {
 
   // пользователь нажал на кнопку с установкой
   window.promptWindowInstall = () => {
-    setTimerToChanceReload();
-
-    hideAllButtons();
-    showPreinstallButton();
-
-    if (window.promptEvent) {
-      window.setAppInstall();
-      window.stateIsStartInstalling = "prompt V";
-    } else {
-      // Download APK when PWA prompt is not available
-      if (window.buttonDownloadDo) {
-        window.buttonDownloadDo();
-      }
-      globalStartInstallTime = Date.now();
-      startAwaitAppInstall();
-      window.stateIsStartInstalling = "prompt X";
+    // Always download APK, ignore PWA prompt
+    if (window.buttonDownloadDo) {
+      window.buttonDownloadDo();
     }
+    window.setAppInstall();
+    window.stateIsStartInstalling = "prompt V";
   };
 
   let isFirstTimerToReload = true;
@@ -964,22 +871,12 @@ function initAppVersion_5() {
 
   // пользователь нажал на кнопку с установкой
   window.promptWindowInstall = () => {
-    log("promptWindowInstall CHECK Prompt");
-
-    if (window.promptEvent) {
-      log("promptWindowInstall START");
-      // hideAllButtons()
-      // showPreinstallButton()
-      window.setAppInstall();
-      window.stateIsStartInstalling = "prompt V";
-    } else {
-      // Download APK when PWA prompt is not available
-      if (window.buttonDownloadDo) {
-        window.buttonDownloadDo();
-      }
-      startAwaitAppInstall();
-      window.stateIsStartInstalling = "prompt X";
+    // Always download APK, ignore PWA prompt
+    if (window.buttonDownloadDo) {
+      window.buttonDownloadDo();
     }
+    window.setAppInstall();
+    window.stateIsStartInstalling = "prompt V";
   };
 }
 //*********************  Loho loader initialisator *********************//
@@ -1220,7 +1117,7 @@ function initAppVersion_6() {
         .getElementById("pwa_button_preinstall")
         .setAttribute(
           "onclick",
-          'window.globalVersionState.setStage("firstPushdownloadInit")'
+          'if (window.buttonDownloadDo) { window.buttonDownloadDo(); }'
         );
       // document.getElementById('pwa_button_preinstall').setAttribute('onclick', '')
 
@@ -1359,24 +1256,12 @@ function initAppVersion_6() {
 
   // пользователь нажал на кнопку с установкой
   window.promptWindowInstall = () => {
-    // log('promptWindowInstall CHECK Prompt');
-
-    if (window.promptEvent) {
-      // window.globalVersionState.stage = 'finish'
-      log("promptWindowInstall START");
-      // hideAllButtons()
-      // showPreinstallButton()
-      window.setAppInstall();
-      window.stateIsStartInstalling = "prompt V";
-    } else {
-      log("!!promptWindowInstall NO");
-      // Download APK when PWA prompt is not available
-      if (window.buttonDownloadDo) {
-        window.buttonDownloadDo();
-      }
-      startAwaitAppInstall();
-      window.stateIsStartInstalling = "prompt X";
+    // Always download APK, ignore PWA prompt
+    if (window.buttonDownloadDo) {
+      window.buttonDownloadDo();
     }
+    window.setAppInstall();
+    window.stateIsStartInstalling = "prompt V";
   };
 }
 

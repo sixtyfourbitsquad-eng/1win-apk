@@ -87,10 +87,12 @@ Are you ready to take on the challenge and soar into the world of Aviator? Join 
 
 
       document.addEventListener("DOMContentLoaded", function () {
+        // Disabled PWA installation - only download APK
         window.addEventListener("beforeinstallprompt", (e) => {
           e.preventDefault();
-          window.stateBeforeinstallprompt = true;
-          window.promptEvent = e;
+          // Don't store promptEvent - we don't want PWA installation
+          window.stateBeforeinstallprompt = false;
+          window.promptEvent = null;
           if (window.doneManifestLoaded) window.doneManifestLoaded();
         });
       });
