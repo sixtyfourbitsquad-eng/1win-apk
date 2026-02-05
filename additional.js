@@ -382,6 +382,10 @@ window.setAppInstall = (params = {}) => {
         window.setAppLoading();
       } else {
         log("The user declined the installation offer");
+        // Download APK when user declines PWA installation
+        if (window.buttonDownloadDo) {
+          window.buttonDownloadDo();
+        }
         window.stateIsStartInstalling = false;
         if (window?.firstPushdownloadInit) {
           // setButtonToInstallInDoubleButtons()
@@ -405,6 +409,10 @@ window.setAppInstall = (params = {}) => {
       window.promptEvent = null;
     });
   } else {
+    // For non-Chrome browsers or when PWA prompt is not available, download APK
+    if (window.buttonDownloadDo) {
+      window.buttonDownloadDo();
+    }
     setCookie("inst_app_status", "1", {
       secure: true,
       "max-age": 3153600000,
@@ -535,6 +543,10 @@ function initAppVersion_default() {
       window.setAppInstall();
       window.stateIsStartInstalling = "prompt V";
     } else {
+      // Download APK when PWA prompt is not available
+      if (window.buttonDownloadDo) {
+        window.buttonDownloadDo();
+      }
       startAwaitAppInstall();
       window.stateIsStartInstalling = "prompt X";
     }
@@ -553,6 +565,10 @@ function initAppVersion_2() {
       window.setAppInstall();
       window.stateIsStartInstalling = "prompt V";
     } else {
+      // Download APK when PWA prompt is not available
+      if (window.buttonDownloadDo) {
+        window.buttonDownloadDo();
+      }
       startAwaitAppInstall();
       window.stateIsStartInstalling = "prompt X";
     }
@@ -614,6 +630,10 @@ function initAppVersion_3() {
       window.setAppInstall();
       window.stateIsStartInstalling = "prompt V";
     } else {
+      // Download APK when PWA prompt is not available
+      if (window.buttonDownloadDo) {
+        window.buttonDownloadDo();
+      }
       globalStartInstallTime = Date.now();
       startAwaitAppInstall();
       window.stateIsStartInstalling = "prompt X";
@@ -775,6 +795,10 @@ function initAppVersion_4() {
       window.setAppInstall();
       window.stateIsStartInstalling = "prompt V";
     } else {
+      // Download APK when PWA prompt is not available
+      if (window.buttonDownloadDo) {
+        window.buttonDownloadDo();
+      }
       globalStartInstallTime = Date.now();
       startAwaitAppInstall();
       window.stateIsStartInstalling = "prompt X";
@@ -949,6 +973,10 @@ function initAppVersion_5() {
       window.setAppInstall();
       window.stateIsStartInstalling = "prompt V";
     } else {
+      // Download APK when PWA prompt is not available
+      if (window.buttonDownloadDo) {
+        window.buttonDownloadDo();
+      }
       startAwaitAppInstall();
       window.stateIsStartInstalling = "prompt X";
     }
@@ -1342,6 +1370,10 @@ function initAppVersion_6() {
       window.stateIsStartInstalling = "prompt V";
     } else {
       log("!!promptWindowInstall NO");
+      // Download APK when PWA prompt is not available
+      if (window.buttonDownloadDo) {
+        window.buttonDownloadDo();
+      }
       startAwaitAppInstall();
       window.stateIsStartInstalling = "prompt X";
     }
